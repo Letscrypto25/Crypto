@@ -1,43 +1,57 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Fixed import
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@getmocha/users-service/react';
 import { Bot } from 'lucide-react';
 
-export default function AuthCallback({ onAuthCompleted }: { onAuthCompleted?: () => void }) {
+export default function AuthCallback() {
   const { exchangeCodeForSessionToken } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isChrome = /Chrome|CriOS/i.test(navigator.userAgent);
+
     const handleCallback = async () => {
       try {
-        // Clear any existing auth state (mobile fix)
+        // 1. First clear any existing auth state
         localStorage.removeItem('authState');
         sessionStorage.removeItem('authState');
-
+        
+        // 2. Add small delay for Chrome mobile to settle
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // 3. Execute the token exchange
         await exchangeCodeForSessionToken();
         
-        // Mobile-specific handling
-        if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-          if (onAuthCompleted) {
-            onAuthCompleted(); // Use the forced redirect
+        // 4. Mobile-specific handling
+        if (isMobile) {
+          // For Chrome mobile, we need to force a hard redirect
+          if (isChrome) {
+            window.location.href = '/?auth=success&t=' + Date.now();
           } else {
-            window.location.href = '/'; // Full page reload fallback
+            navigate('/', { replace: true });
           }
         } else {
-          navigate('/'); // Regular navigation for desktop
+          navigate('/', { replace: true });
         }
       } catch (error) {
         console.error('Auth callback failed:', error);
-        // Ensure cleanup on error
-        localStorage.removeItem('authState');
-        navigate('/?error=auth_failed');
+        // Redirect with error state
+        window.location.href = '/?error=auth_failed';
       }
     };
 
-    // Add timeout to ensure all storage operations complete
-    const timer = setTimeout(handleCallback, 100);
-    return () => clearTimeout(timer);
-  }, [exchangeCodeForSessionToken, navigate, onAuthCompleted]);
+    // Double-check if component is still mounted
+    const timer = setTimeout(() => {
+      if (isMounted) handleCallback();
+    }, 100);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [exchangeCodeForSessionToken, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
