@@ -1,0 +1,43 @@
+
+CREATE TABLE user_profiles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL UNIQUE,
+  lc_coins INTEGER DEFAULT 0,
+  total_earned_coins INTEGER DEFAULT 0,
+  bot_active BOOLEAN DEFAULT FALSE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE trading_strategies (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  lc_cost INTEGER NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_bot_configs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  strategy_id INTEGER NOT NULL,
+  is_active BOOLEAN DEFAULT FALSE,
+  config_data TEXT, -- JSON string for strategy parameters
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE trading_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  strategy_id INTEGER NOT NULL,
+  start_time DATETIME NOT NULL,
+  end_time DATETIME,
+  profit_loss REAL DEFAULT 0,
+  trades_count INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'running', -- running, stopped, completed
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
