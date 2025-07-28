@@ -8,48 +8,59 @@ export default function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let isMounted = true;
     const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     const isChrome = /Chrome|CriOS/i.test(navigator.userAgent);
+    let authCompleted = false;
 
-    const handleCallback = async () => {
+    const completeAuth = async () => {
+      if (authCompleted) return;
+      authCompleted = true;
+
       try {
-        // 1. First clear any existing auth state
+        // 1. Clear all possible auth states
         localStorage.removeItem('authState');
         sessionStorage.removeItem('authState');
-        
-        // 2. Add small delay for Chrome mobile to settle
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // 3. Execute the token exchange
+        document.cookie = 'authToken=; Max-Age=0; path=/;';
+
+        // 2. Add delay for Chrome mobile to process storage changes
+        await new Promise(resolve => setTimeout(resolve, isMobile ? 500 : 100));
+
+        // 3. Execute token exchange
         await exchangeCodeForSessionToken();
-        
-        // 4. Mobile-specific handling
+
+        // 4. Mobile-specific handling with multiple fallbacks
         if (isMobile) {
-          // For Chrome mobile, we need to force a hard redirect
-          if (isChrome) {
-            window.location.href = '/?auth=success&t=' + Date.now();
-          } else {
-            navigate('/', { replace: true });
-          }
+          // First try regular navigation
+          navigate('/', { replace: true });
+          
+          // Fallback if still on callback page after delay
+          setTimeout(() => {
+            if (window.location.pathname.includes('/auth/callback')) {
+              // Nuclear option for Chrome mobile
+              window.location.href = window.location.origin + '/?mobile-redirect=' + Date.now();
+            }
+          }, 1000);
         } else {
           navigate('/', { replace: true });
         }
       } catch (error) {
         console.error('Auth callback failed:', error);
-        // Redirect with error state
-        window.location.href = '/?error=auth_failed';
+        // Complete reset on error
+        window.location.href = window.location.origin + '/?error=auth_failed';
       }
     };
 
-    // Double-check if component is still mounted
-    const timer = setTimeout(() => {
-      if (isMounted) handleCallback();
-    }, 100);
+    // Start auth process with multiple safety checks
+    const timer1 = setTimeout(completeAuth, 100);
+    
+    // Secondary safety check in case first one fails
+    const timer2 = setTimeout(() => {
+      if (!authCompleted) completeAuth();
+    }, 2000);
 
     return () => {
-      isMounted = false;
-      clearTimeout(timer);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
     };
   }, [exchangeCodeForSessionToken, navigate]);
 
