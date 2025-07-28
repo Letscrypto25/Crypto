@@ -1,0 +1,2 @@
+
+DELETE FROM lottery_pools WHERE pool_type IN ('weekly', 'monthly');
