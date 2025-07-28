@@ -1,25 +1,43 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom'; // Fixed import
 import { useAuth } from '@getmocha/users-service/react';
 import { Bot } from 'lucide-react';
 
-export default function AuthCallback() {
+export default function AuthCallback({ onAuthCompleted }: { onAuthCompleted?: () => void }) {
   const { exchangeCodeForSessionToken } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        // Clear any existing auth state (mobile fix)
+        localStorage.removeItem('authState');
+        sessionStorage.removeItem('authState');
+
         await exchangeCodeForSessionToken();
-        navigate('/');
+        
+        // Mobile-specific handling
+        if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          if (onAuthCompleted) {
+            onAuthCompleted(); // Use the forced redirect
+          } else {
+            window.location.href = '/'; // Full page reload fallback
+          }
+        } else {
+          navigate('/'); // Regular navigation for desktop
+        }
       } catch (error) {
         console.error('Auth callback failed:', error);
-        navigate('/');
+        // Ensure cleanup on error
+        localStorage.removeItem('authState');
+        navigate('/?error=auth_failed');
       }
     };
 
-    handleCallback();
-  }, [exchangeCodeForSessionToken, navigate]);
+    // Add timeout to ensure all storage operations complete
+    const timer = setTimeout(handleCallback, 100);
+    return () => clearTimeout(timer);
+  }, [exchangeCodeForSessionToken, navigate, onAuthCompleted]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
