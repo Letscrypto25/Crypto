@@ -10,11 +10,6 @@ enabled = true
 [assets]
 not_found_handling = "single-page-application"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "cryptomind-db"
-database_id = "${DB_ID}"
-
 [vars]
 SUPABASE_URL = "${SUPABASE_URL}"
 SUPABASE_KEY = "${SUPABASE_KEY}"
