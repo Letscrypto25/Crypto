@@ -1,0 +1,1 @@
+DELETE FROM user_market_preferences WHERE user_id = 'default';
