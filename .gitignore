@@ -1,5 +1,41 @@
-dist/
+# Node
 node_modules/
-.wrangler/
-.dev.vars
-worker-configuration.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+
+# Vite cache
+.vite/
+.cache/
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Supabase (if using CLI or dumping schema)
+.supabase/
+
+# Codespaces
+*.code-workspace
+*.devcontainer/
+
+# Others
+coverage/
